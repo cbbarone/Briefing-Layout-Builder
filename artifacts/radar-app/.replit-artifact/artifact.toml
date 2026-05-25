@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Radar de Inovação"
+version = "1.0.0"
+id = "artifacts/radar-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22353
+
+[services.development]
+run = "pnpm --filter @workspace/radar-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/radar-app", "run", "build" ]
+publicDir = "artifacts/radar-app/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22353"
+BASE_PATH = "/"

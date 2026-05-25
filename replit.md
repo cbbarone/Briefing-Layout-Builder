@@ -1,45 +1,45 @@
-# [Project name]
+# Radar de Inovação
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Aplicativo web que converte planilhas Excel de projetos em apresentações PowerPoint do Radar de Inovação, com bolhas por categoria e slide de projetos destaque.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/api-server run dev` — API server (port 8080)
+- `pnpm --filter @workspace/radar-app run dev` — frontend (port 22353)
+- `pnpm run typecheck` — full typecheck
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- API: Express 5 + multer (upload) + xlsx (parse) + jszip (PPTX)
+- Frontend: React + Vite (sem DB — stateless)
+- Build: esbuild (ESM bundle)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/api-server/src/routes/radar.ts` — endpoints parse + generate
+- `artifacts/api-server/src/lib/pptxGenerator.ts` — lógica de geração PPTX com jszip
+- `artifacts/radar-app/src/pages/Upload.tsx` — tela de upload
+- `artifacts/radar-app/src/pages/Preview.tsx` — seleção de destaques + download
+- `attached_assets/*.pptx` — template base do PowerPoint
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **jszip + template**: O PPTX é gerado modificando o template original via jszip, preservando exatamente a identidade visual (radar, legendas, textos fixos, logo GEIN).
+- **Stateless**: Nenhum banco de dados. Os dados parseados ficam no estado React do cliente; o endpoint /generate recebe tudo via JSON.
+- **Direct fetch**: Sem codegen OpenAPI — upload de arquivo e download de blob binário não casam bem com React Query hooks gerados.
+- **Posicionamento dinâmico**: Bolhas distribuídas angularmente com distância radial baseada no % direcionado. Algoritmo de repulsão anti-sobreposição (80 iterações).
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
+1. Upload de planilha Excel com colunas CATEGORIA, TÍTULO, ETAPA
+2. Parser filtra Cancelado/Identificado, classifica Direcionados vs. Em Andamento
+3. Usuário vê estatísticas por categoria e seleciona projetos destaque
+4. Download de PPTX com 2 slides: Slide 1 = radar com bolhas; Slide 2 = destaque com listas por categoria
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- O template PPTX está em `attached_assets/` — caminho hardcoded no pptxGenerator.ts
+- No bundle esbuild, `__dirname` = `dist/` (3 níveis acima de `workspace/`)
+- Etapas direcionadas: Concluído, Solução Experimentada, Finalizado
+- Etapas excluídas: Cancelado, Identificado
