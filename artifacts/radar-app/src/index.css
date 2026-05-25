@@ -344,7 +344,7 @@
 
 /* Highlights section */
 .highlights-hint { font-size: 0.8rem; color: #778; margin: -6px 0 12px; }
-.projects-list { display: flex; flex-direction: column; gap: 6px; max-height: 520px; overflow-y: auto; }
+.projects-list { display: flex; flex-direction: column; gap: 6px; }
 
 .cat-group { border: 1.5px solid #e8eaf8; border-radius: 9px; overflow: hidden; }
 .cat-group-header {

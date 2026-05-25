@@ -14,7 +14,9 @@ export default function PreviewPage({ data, onReset }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
-  const [expandedCat, setExpandedCat] = useState<string | null>(null);
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(
+    () => new Set(data.categories.map((c) => c.name)),
+  );
 
   function toggleProject(id: string) {
     setSelected((prev) => {
@@ -187,7 +189,7 @@ export default function PreviewPage({ data, onReset }: Props) {
                 const catProjects = projects.filter(
                   (p) => p.categoria === cat.name,
                 );
-                const isExpanded = expandedCat === cat.name;
+                const isExpanded = expandedCats.has(cat.name);
                 const allSelected = catProjects.every((p) =>
                   selected.has(p.id),
                 );
@@ -221,7 +223,12 @@ export default function PreviewPage({ data, onReset }: Props) {
                       <button
                         className="expand-btn"
                         onClick={() =>
-                          setExpandedCat(isExpanded ? null : cat.name)
+                          setExpandedCats((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(cat.name)) next.delete(cat.name);
+                            else next.add(cat.name);
+                            return next;
+                          })
                         }
                         aria-label={isExpanded ? "Recolher" : "Expandir"}
                       >
