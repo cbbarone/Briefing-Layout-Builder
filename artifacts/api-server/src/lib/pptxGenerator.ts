@@ -279,7 +279,7 @@ function generateArrow(
     `</p:nvCxnSpPr>` +
     `<p:spPr>` +
     `<a:xfrm${flipH}${flipV}><a:off x="${offX}" y="${offY}"/><a:ext cx="${extCX}" cy="${extCY}"/></a:xfrm>` +
-    `<a:prstGeom prst="line"><a:avLst/></a:prstGeom>` +
+    `<a:prstGeom prst="bentConnector3"><a:avLst/></a:prstGeom>` +
     `<a:noFill/>` +
     `<a:ln w="38100">` +
     `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
