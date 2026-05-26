@@ -194,15 +194,15 @@ function generateCategoryLabel(
     `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="CatLabel${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>` +
     `<p:spPr>` +
     `<a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${W}" cy="200000"/></a:xfrm>` +
-    `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 16667"/></a:avLst></a:prstGeom>` +
+    `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>` +
     `<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>` +
-    `<a:ln w="28575"><a:solidFill><a:srgbClr val="060386"/></a:solidFill></a:ln>` +
+    `<a:ln><a:noFill/></a:ln>` +
     `</p:spPr>` +
     `<p:txBody>` +
     `<a:bodyPr wrap="square" lIns="91440" rIns="91440" tIns="45720" bIns="45720" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
     `<a:lstStyle/>` +
     `<a:p><a:pPr algn="ctr"><a:buNone/></a:pPr><a:r>` +
-    `<a:rPr lang="pt-BR" sz="700" b="1" dirty="0">` +
+    `<a:rPr lang="pt-BR" sz="700" b="0" dirty="0">` +
     `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
     `<a:latin typeface="Montserrat" pitchFamily="2" charset="77"/>` +
     `</a:rPr><a:t>${escapeXml(categoryName)}</a:t></a:r></a:p>` +
@@ -334,16 +334,47 @@ function calculatePositions(categories: CategoryData[]): BubblePos[] {
   });
 }
 
+interface ExclusionRect { x1: number; y1: number; x2: number; y2: number }
+
+// Fixed areas that bubbles must not overlap (title bar, legend block)
+const EXCLUSION_ZONES: ExclusionRect[] = [
+  { x1: 0,       y1: 0, x2: SLIDE_W,    y2: 860000  }, // title strip (top)
+  { x1: 8350000, y1: 0, x2: SLIDE_W,    y2: 1700000 }, // legend (top-right)
+];
+
+function pushBubbleFromRect(
+  bx: number, by: number, r: number,
+  rect: ExclusionRect, margin: number,
+): { dx: number; dy: number } {
+  const closestX = Math.max(rect.x1, Math.min(bx, rect.x2));
+  const closestY = Math.max(rect.y1, Math.min(by, rect.y2));
+  const dx = bx - closestX;
+  const dy = by - closestY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const minDist = r + margin;
+  if (dist >= minDist) return { dx: 0, dy: 0 };
+  if (dist < 1) {
+    // Center is inside the rect — push downward (away from top)
+    return { dx: 0, dy: minDist };
+  }
+  const push = minDist - dist;
+  return { dx: (dx / dist) * push, dy: (dy / dist) * push };
+}
+
 function resolveOverlaps(positions: BubblePos[]): BubblePos[] {
   const result = positions.map((p) => ({ ...p }));
-  for (let iter = 0; iter < 80; iter++) {
+  const MARGIN = 200000;
+
+  for (let iter = 0; iter < 120; iter++) {
     let moved = false;
+
+    // Bubble ↔ bubble repulsion
     for (let i = 0; i < result.length; i++) {
       for (let j = i + 1; j < result.length; j++) {
         const dx = result[j].x - result[i].x;
         const dy = result[j].y - result[i].y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const minDist = (result[i].diameter + result[j].diameter) / 2 + 180000;
+        const minDist = (result[i].diameter + result[j].diameter) / 2 + MARGIN;
         if (dist < minDist && dist > 1) {
           const push = (minDist - dist) / 2;
           const nx = dx / dist;
@@ -356,6 +387,20 @@ function resolveOverlaps(positions: BubblePos[]): BubblePos[] {
         }
       }
     }
+
+    // Bubble ↔ exclusion zone repulsion
+    for (let i = 0; i < result.length; i++) {
+      const r = Math.round(result[i].diameter / 2);
+      for (const zone of EXCLUSION_ZONES) {
+        const { dx, dy } = pushBubbleFromRect(result[i].x, result[i].y, r, zone, MARGIN);
+        if (dx !== 0 || dy !== 0) {
+          result[i].x += Math.round(dx);
+          result[i].y += Math.round(dy);
+          moved = true;
+        }
+      }
+    }
+
     if (!moved) break;
   }
   return result;
