@@ -242,10 +242,10 @@ function generateHighlightBox(
     `<a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${width}" cy="100000"/></a:xfrm>` +
     `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 16667"/></a:avLst></a:prstGeom>` +
     `<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>` +
-    `<a:ln w="57150"><a:solidFill><a:srgbClr val="060386"/></a:solidFill></a:ln>` +
+    `<a:ln w="38100"><a:solidFill><a:srgbClr val="060386"/></a:solidFill></a:ln>` +
     `</p:spPr>` +
     `<p:txBody>` +
-    `<a:bodyPr wrap="square" lIns="180000" rIns="180000" tIns="180000" bIns="180000" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
+    `<a:bodyPr wrap="square" lIns="36000" rIns="36000" tIns="36000" bIns="36000" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
     `<a:lstStyle/>` +
     catPara +
     projectParas +
@@ -283,7 +283,7 @@ function generateArrow(
     `<a:noFill/>` +
     `<a:ln w="38100">` +
     `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
-    `<a:tailEnd type="arrow" w="med" len="med"/>` +
+    `<a:tailEnd type="triangle" w="med" len="med"/>` +
     `</a:ln>` +
     `</p:spPr>` +
     `<p:style>` +
@@ -398,6 +398,18 @@ function resolveOverlaps(positions: BubblePos[]): BubblePos[] {
           result[i].y += Math.round(dy);
           moved = true;
         }
+      }
+    }
+
+    // Clamp bubbles inside slide bounds
+    for (let i = 0; i < result.length; i++) {
+      const r = Math.round(result[i].diameter / 2);
+      const clampedX = Math.max(r, Math.min(SLIDE_W - r, result[i].x));
+      const clampedY = Math.max(r, Math.min(SLIDE_H - r, result[i].y));
+      if (clampedX !== result[i].x || clampedY !== result[i].y) {
+        result[i].x = clampedX;
+        result[i].y = clampedY;
+        moved = true;
       }
     }
 
