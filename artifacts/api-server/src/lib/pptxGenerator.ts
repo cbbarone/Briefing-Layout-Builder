@@ -14,12 +14,17 @@ const TEMPLATE_PATH = path.join(
   "02_-_Comite_Inovação_e_Novos_Negocios_17_04_2026_1_1779743624123.pptx",
 );
 
+const SLIDE_W = 12192000;
+const SLIDE_H = 6858000;
 const CENTER_X = 6096000;
 const CENTER_Y = 3429000;
 const OUTER_RADIUS = 2880000;
 const INNER_RADIUS = 1440000;
 const MIN_BUBBLE_DIAM = 600000;
 const MAX_BUBBLE_DIAM = 2700000;
+const SMALL_BUBBLE_THRESHOLD = 900000;
+const HIGHLIGHT_BOX_WIDTH = 2300000;
+const HIGHLIGHT_GAP = 220000;
 
 const DYNAMIC_SHAPE_IDS = [15, 17, 20, 21, 22, 32, 47, 48, 8, 10];
 
@@ -115,6 +120,7 @@ function generateBubbleXml(
   diameter: number,
   count: number,
   categoryName: string,
+  showNameInside: boolean,
 ): string {
   const x = Math.round(centerX - diameter / 2);
   const y = Math.round(centerY - diameter / 2);
@@ -122,65 +128,168 @@ function generateBubbleXml(
   const cy = Math.round(diameter);
 
   const countFontSize =
-    diameter > 2200000
-      ? 4800
-      : diameter > 1600000
-        ? 3600
-        : diameter > 1100000
-          ? 2800
-          : diameter > 750000
-            ? 2000
-            : 1600;
+    diameter > 2200000 ? 4800 :
+    diameter > 1600000 ? 3600 :
+    diameter > 1100000 ? 2800 :
+    diameter > 750000  ? 2000 : 1600;
 
   const nameFontSize =
-    diameter > 2200000
-      ? 1300
-      : diameter > 1600000
-        ? 1100
-        : diameter > 1100000
-          ? 900
-          : diameter > 750000
-            ? 700
-            : 600;
+    diameter > 2200000 ? 1300 :
+    diameter > 1600000 ? 1100 :
+    diameter > 1100000 ? 900 :
+    diameter > 750000  ? 700 : 600;
 
   const maxCharsPerLine =
-    diameter > 2200000
-      ? 18
-      : diameter > 1600000
-        ? 14
-        : diameter > 1100000
-          ? 11
-          : 9;
+    diameter > 2200000 ? 18 :
+    diameter > 1600000 ? 14 :
+    diameter > 1100000 ? 11 : 9;
 
-  const lines = splitIntoLines(categoryName, maxCharsPerLine);
+  const nameParagraphs = showNameInside
+    ? splitIntoLines(categoryName, maxCharsPerLine)
+        .map(
+          (line) =>
+            `<a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="pt-BR" sz="${nameFontSize}" b="1" dirty="0">` +
+            `<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>` +
+            `<a:latin typeface="Montserrat" pitchFamily="2" charset="77"/></a:rPr>` +
+            `<a:t>${escapeXml(line)}</a:t></a:r></a:p>`,
+        )
+        .join("")
+    : "";
 
-  const nameParagraphs = lines
-    .map(
-      (line) =>
-        `<a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="pt-BR" sz="${nameFontSize}" b="1" dirty="0"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:latin typeface="Montserrat" pitchFamily="2" charset="77"/></a:rPr><a:t>${escapeXml(line)}</a:t></a:r></a:p>`,
-    )
-    .join("");
-
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="BubbleCat${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="060386"/></a:solidFill><a:ln w="38100"><a:solidFill><a:srgbClr val="060386"/></a:solidFill></a:ln></p:spPr><p:style><a:lnRef idx="2"><a:schemeClr val="accent1"><a:shade val="15000"/></a:schemeClr></a:lnRef><a:fillRef idx="1"><a:schemeClr val="accent1"/></a:fillRef><a:effectRef idx="0"><a:schemeClr val="accent1"/></a:effectRef><a:fontRef idx="minor"><a:schemeClr val="lt1"/></a:fontRef></p:style><p:txBody><a:bodyPr rtlCol="0" anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="pt-BR" sz="${countFontSize}" b="1" dirty="0"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:latin typeface="Montserrat Black" pitchFamily="2" charset="77"/></a:rPr><a:t>${count}</a:t></a:r></a:p>${nameParagraphs}</p:txBody></p:sp>`;
+  return (
+    `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="BubbleCat${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>` +
+    `<p:spPr>` +
+    `<a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>` +
+    `<a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom>` +
+    `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
+    `<a:ln w="38100"><a:solidFill><a:srgbClr val="060386"/></a:solidFill></a:ln>` +
+    `</p:spPr>` +
+    `<p:style>` +
+    `<a:lnRef idx="2"><a:schemeClr val="accent1"><a:shade val="15000"/></a:schemeClr></a:lnRef>` +
+    `<a:fillRef idx="1"><a:schemeClr val="accent1"/></a:fillRef>` +
+    `<a:effectRef idx="0"><a:schemeClr val="accent1"/></a:effectRef>` +
+    `<a:fontRef idx="minor"><a:schemeClr val="lt1"/></a:fontRef>` +
+    `</p:style>` +
+    `<p:txBody>` +
+    `<a:bodyPr lIns="0" rIns="0" tIns="0" bIns="0" rtlCol="0" anchor="ctr"/>` +
+    `<a:lstStyle/>` +
+    `<a:p><a:pPr algn="ctr"/><a:r>` +
+    `<a:rPr lang="pt-BR" sz="${countFontSize}" b="1" dirty="0">` +
+    `<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>` +
+    `<a:latin typeface="Montserrat Black" pitchFamily="2" charset="77"/>` +
+    `</a:rPr><a:t>${count}</a:t></a:r></a:p>` +
+    nameParagraphs +
+    `</p:txBody></p:sp>`
+  );
 }
 
-function generateHighlightSection(
+function generateCategoryLabel(
   id: number,
   x: number,
   y: number,
-  cx: number,
+  categoryName: string,
+): string {
+  const W = 1600000;
+  return (
+    `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="CatLabel${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>` +
+    `<p:spPr>` +
+    `<a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${W}" cy="200000"/></a:xfrm>` +
+    `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 16667"/></a:avLst></a:prstGeom>` +
+    `<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>` +
+    `<a:ln w="28575"><a:solidFill><a:srgbClr val="060386"/></a:solidFill></a:ln>` +
+    `</p:spPr>` +
+    `<p:txBody>` +
+    `<a:bodyPr wrap="square" lIns="91440" rIns="91440" tIns="45720" bIns="45720" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
+    `<a:lstStyle/>` +
+    `<a:p><a:pPr algn="ctr"><a:buNone/></a:pPr><a:r>` +
+    `<a:rPr lang="pt-BR" sz="700" b="1" dirty="0">` +
+    `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
+    `<a:latin typeface="Montserrat" pitchFamily="2" charset="77"/>` +
+    `</a:rPr><a:t>${escapeXml(categoryName)}</a:t></a:r></a:p>` +
+    `</p:txBody></p:sp>`
+  );
+}
+
+function generateHighlightBox(
+  id: number,
+  x: number,
+  y: number,
+  width: number,
   categoryName: string,
   projects: string[],
 ): string {
-  const catPara = `<a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr lang="pt-BR" sz="900" b="1" dirty="0"><a:solidFill><a:srgbClr val="060386"/></a:solidFill><a:latin typeface="Montserrat" pitchFamily="2" charset="77"/></a:rPr><a:t>${escapeXml(categoryName)}</a:t></a:r></a:p>`;
+  const catPara =
+    `<a:p><a:pPr><a:buNone/></a:pPr><a:r>` +
+    `<a:rPr lang="pt-BR" sz="900" b="1" dirty="0">` +
+    `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
+    `<a:latin typeface="Montserrat" pitchFamily="2" charset="77"/>` +
+    `</a:rPr><a:t>${escapeXml(categoryName)}</a:t></a:r></a:p>`;
+
   const projectParas = projects
     .map(
       (p) =>
-        `<a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr lang="pt-BR" sz="800" b="1" dirty="0"><a:solidFill><a:srgbClr val="050193"/></a:solidFill><a:latin typeface="Montserrat" pitchFamily="2" charset="77"/></a:rPr><a:t>${escapeXml(p)}</a:t></a:r></a:p>`,
+        `<a:p><a:pPr><a:buNone/></a:pPr><a:r>` +
+        `<a:rPr lang="pt-BR" sz="800" dirty="0">` +
+        `<a:solidFill><a:srgbClr val="1A1A1A"/></a:solidFill>` +
+        `<a:latin typeface="Montserrat" pitchFamily="2" charset="77"/>` +
+        `</a:rPr><a:t>\u2022 ${escapeXml(p)}</a:t></a:r></a:p>`,
     )
     .join("");
 
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Highlight${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="100000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr wrap="square" rtlCol="0"><a:spAutoFit/></a:bodyPr><a:lstStyle/>${catPara}${projectParas}</p:txBody></p:sp>`;
+  return (
+    `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Highlight${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>` +
+    `<p:spPr>` +
+    `<a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${width}" cy="100000"/></a:xfrm>` +
+    `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 16667"/></a:avLst></a:prstGeom>` +
+    `<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>` +
+    `<a:ln w="57150"><a:solidFill><a:srgbClr val="060386"/></a:solidFill></a:ln>` +
+    `</p:spPr>` +
+    `<p:txBody>` +
+    `<a:bodyPr wrap="square" lIns="180000" rIns="180000" tIns="180000" bIns="180000" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
+    `<a:lstStyle/>` +
+    catPara +
+    projectParas +
+    `</p:txBody></p:sp>`
+  );
+}
+
+function generateArrow(
+  id: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): string {
+  const offX = Math.min(x1, x2);
+  const offY = Math.min(y1, y2);
+  const extCX = Math.max(1, Math.abs(x2 - x1));
+  const extCY = Math.max(1, Math.abs(y2 - y1));
+  const flipH = x1 > x2 ? ' flipH="1"' : "";
+  const flipV = y1 > y2 ? ' flipV="1"' : "";
+
+  return (
+    `<p:cxnSp>` +
+    `<p:nvCxnSpPr>` +
+    `<p:cNvPr id="${id}" name="Arrow${id}"/>` +
+    `<p:cNvCxnSpPr/><p:nvPr/>` +
+    `</p:nvCxnSpPr>` +
+    `<p:spPr>` +
+    `<a:xfrm${flipH}${flipV}><a:off x="${offX}" y="${offY}"/><a:ext cx="${extCX}" cy="${extCY}"/></a:xfrm>` +
+    `<a:prstGeom prst="line"><a:avLst/></a:prstGeom>` +
+    `<a:noFill/>` +
+    `<a:ln w="38100">` +
+    `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
+    `<a:tailEnd type="arrow" w="med" len="med"/>` +
+    `</a:ln>` +
+    `</p:spPr>` +
+    `<p:style>` +
+    `<a:lnRef idx="1"><a:schemeClr val="accent1"/></a:lnRef>` +
+    `<a:fillRef idx="0"><a:schemeClr val="accent1"/></a:fillRef>` +
+    `<a:effectRef idx="0"><a:schemeClr val="accent1"/></a:effectRef>` +
+    `<a:fontRef idx="minor"><a:schemeClr val="tx1"/></a:fontRef>` +
+    `</p:style>` +
+    `</p:cxnSp>`
+  );
 }
 
 interface BubblePos {
@@ -252,6 +361,20 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
   const templateBuffer = await fs.readFile(TEMPLATE_PATH);
   const zip = await (JSZip as any).loadAsync(templateBuffer);
 
+  const positions = resolveOverlaps(calculatePositions(input.categories));
+
+  const highlightsByCatIdx = new Map<number, string[]>();
+  for (const h of input.highlights) {
+    const idx = input.categories.findIndex(
+      (c) =>
+        c.displayName === h.category ||
+        c.name.toUpperCase() === h.category,
+    );
+    if (idx < 0) continue;
+    if (!highlightsByCatIdx.has(idx)) highlightsByCatIdx.set(idx, []);
+    highlightsByCatIdx.get(idx)!.push(h.title);
+  }
+
   for (const slideFile of [
     "ppt/slides/slide1.xml",
     "ppt/slides/slide2.xml",
@@ -280,13 +403,14 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
 
     xml = removeShapesByIds(xml, DYNAMIC_SHAPE_IDS);
 
-    const positions = resolveOverlaps(calculatePositions(input.categories));
     let newShapes = "";
     let idCounter = 300;
 
     for (let i = 0; i < input.categories.length; i++) {
       const cat = input.categories[i];
       const pos = positions[i];
+      const isSmall = pos.diameter < SMALL_BUBBLE_THRESHOLD;
+
       newShapes += generateBubbleXml(
         idCounter++,
         pos.x,
@@ -294,46 +418,72 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
         pos.diameter,
         cat.total,
         cat.displayName,
+        !isSmall,
       );
+
+      if (isSmall) {
+        const onLeft = pos.x < CENTER_X;
+        const LW = 1600000;
+        const labelX = onLeft
+          ? Math.max(50000, pos.x - pos.diameter / 2 - LW - 150000)
+          : Math.min(SLIDE_W - LW - 50000, pos.x + pos.diameter / 2 + 150000);
+        const labelY = Math.round(pos.y - 160000);
+        newShapes += generateCategoryLabel(
+          idCounter++,
+          labelX,
+          labelY,
+          cat.displayName,
+        );
+      }
     }
 
-    if (isSlide2 && input.highlights.length > 0) {
-      const grouped = new Map<string, string[]>();
-      for (const h of input.highlights) {
-        if (!grouped.has(h.category)) grouped.set(h.category, []);
-        grouped.get(h.category)!.push(h.title);
-      }
+    if (isSlide2 && highlightsByCatIdx.size > 0) {
+      const MARGIN = 200000;
+      const BOX_W = HIGHLIGHT_BOX_WIDTH;
+      const LINE_H = 290000;
 
-      const entries = Array.from(grouped.entries());
-      const leftEntries = entries.slice(0, Math.ceil(entries.length / 2));
-      const rightEntries = entries.slice(Math.ceil(entries.length / 2));
+      for (const [catIdx, projects] of highlightsByCatIdx.entries()) {
+        const pos = positions[catIdx];
+        const cat = input.categories[catIdx];
+        const bubbleR = pos.diameter / 2;
 
-      let leftY = 600000;
-      for (const [catName, projects] of leftEntries) {
-        if (leftY > 6200000) break;
-        newShapes += generateHighlightSection(
+        const boxH = 360000 + projects.length * LINE_H + 180000;
+
+        const onLeft = pos.x < CENTER_X;
+        const rawBoxX = onLeft
+          ? pos.x - bubbleR - HIGHLIGHT_GAP - BOX_W
+          : pos.x + bubbleR + HIGHLIGHT_GAP;
+        const boxX = Math.max(
+          MARGIN,
+          Math.min(SLIDE_W - BOX_W - MARGIN, rawBoxX),
+        );
+        const rawBoxY = pos.y - boxH / 2;
+        const boxY = Math.max(
+          MARGIN + 350000,
+          Math.min(SLIDE_H - boxH - MARGIN, rawBoxY),
+        );
+
+        newShapes += generateHighlightBox(
           idCounter++,
-          200000,
-          leftY,
-          2700000,
-          catName,
+          boxX,
+          boxY,
+          BOX_W,
+          cat.displayName,
           projects,
         );
-        leftY += (projects.length + 1) * 310000 + 250000;
-      }
 
-      let rightY = 600000;
-      for (const [catName, projects] of rightEntries) {
-        if (rightY > 6200000) break;
-        newShapes += generateHighlightSection(
+        const arrowStartX = onLeft ? pos.x - bubbleR : pos.x + bubbleR;
+        const arrowStartY = pos.y;
+        const arrowEndX = onLeft ? boxX + BOX_W : boxX;
+        const arrowEndY = Math.round(boxY + boxH / 2);
+
+        newShapes += generateArrow(
           idCounter++,
-          9400000,
-          rightY,
-          2600000,
-          catName,
-          projects,
+          arrowStartX,
+          arrowStartY,
+          arrowEndX,
+          arrowEndY,
         );
-        rightY += (projects.length + 1) * 310000 + 250000;
       }
     }
 

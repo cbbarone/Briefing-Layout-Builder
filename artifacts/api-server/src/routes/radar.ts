@@ -13,7 +13,6 @@ const EXCLUDED_STAGES = ["cancelado", "identificado"];
 const DIRECTED_STAGES = [
   "concluido",
   "solucao experimentada",
-  "finalizado",
 ];
 
 function normalizeStr(s: string): string {
