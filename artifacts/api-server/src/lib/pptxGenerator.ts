@@ -55,7 +55,6 @@ function escapeXml(str: string): string {
 
 function removeShapesByIds(xml: string, ids: number[]): string {
   let result = xml;
-  result = result.replace(/<p:cxnSp>[\s\S]*?<\/p:cxnSp>/g, "");
   for (const id of ids) {
     const searchFor = `<p:cNvPr id="${id}"`;
     const idPos = result.indexOf(searchFor);
