@@ -260,12 +260,16 @@ function generateArrow(
   x2: number,
   y2: number,
 ): string {
-  const offX = Math.min(x1, x2);
-  const offY = Math.min(y1, y2);
-  const extCX = Math.max(1, Math.abs(x2 - x1));
-  const extCY = Math.max(1, Math.abs(y2 - y1));
-  const flipH = x1 > x2 ? ' flipH="1"' : "";
-  const flipV = y1 > y2 ? ' flipV="1"' : "";
+  const rx1 = Math.round(x1);
+  const ry1 = Math.round(y1);
+  const rx2 = Math.round(x2);
+  const ry2 = Math.round(y2);
+  const offX = Math.min(rx1, rx2);
+  const offY = Math.min(ry1, ry2);
+  const extCX = Math.max(1, Math.abs(rx2 - rx1));
+  const extCY = Math.max(1, Math.abs(ry2 - ry1));
+  const flipH = rx1 > rx2 ? ' flipH="1"' : "";
+  const flipV = ry1 > ry2 ? ' flipV="1"' : "";
 
   return (
     `<p:cxnSp>` +
@@ -424,9 +428,10 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
       if (isSmall) {
         const onLeft = pos.x < CENTER_X;
         const LW = 1600000;
+        const halfD = Math.round(pos.diameter / 2);
         const labelX = onLeft
-          ? Math.max(50000, pos.x - pos.diameter / 2 - LW - 150000)
-          : Math.min(SLIDE_W - LW - 50000, pos.x + pos.diameter / 2 + 150000);
+          ? Math.round(Math.max(50000, pos.x - halfD - LW - 150000))
+          : Math.round(Math.min(SLIDE_W - LW - 50000, pos.x + halfD + 150000));
         const labelY = Math.round(pos.y - 160000);
         newShapes += generateCategoryLabel(
           idCounter++,
@@ -445,7 +450,7 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
       for (const [catIdx, projects] of highlightsByCatIdx.entries()) {
         const pos = positions[catIdx];
         const cat = input.categories[catIdx];
-        const bubbleR = pos.diameter / 2;
+        const bubbleR = Math.round(pos.diameter / 2);
 
         const boxH = 360000 + projects.length * LINE_H + 180000;
 
@@ -453,15 +458,15 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
         const rawBoxX = onLeft
           ? pos.x - bubbleR - HIGHLIGHT_GAP - BOX_W
           : pos.x + bubbleR + HIGHLIGHT_GAP;
-        const boxX = Math.max(
+        const boxX = Math.round(Math.max(
           MARGIN,
           Math.min(SLIDE_W - BOX_W - MARGIN, rawBoxX),
-        );
-        const rawBoxY = pos.y - boxH / 2;
-        const boxY = Math.max(
+        ));
+        const rawBoxY = pos.y - Math.round(boxH / 2);
+        const boxY = Math.round(Math.max(
           MARGIN + 350000,
           Math.min(SLIDE_H - boxH - MARGIN, rawBoxY),
-        );
+        ));
 
         newShapes += generateHighlightBox(
           idCounter++,
