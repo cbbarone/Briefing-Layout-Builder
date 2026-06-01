@@ -334,18 +334,16 @@ function calculatePositions(categories: CategoryData[]): BubblePos[] {
 
     const bubbleRadius = diameter / 2;
 
-    // Posição baseada no % direcionado
-    let d =
-      INNER_RADIUS +
-      (OUTER_RADIUS - INNER_RADIUS) * (1 - directedPct) +
-      300000;
+    // A distância do centro da bolha ao centro do radar é proporcional ao
+    // % direcionado. Quanto maior o %, mais a bolha invade o círculo interno.
+    // d = INNER_RADIUS + r * (1 - 2 * directedPct)
+    //   0%  -> borda da bolha toca o círculo interno por fora
+    //   50% -> centro da bolha na borda do círculo interno
+    //   100% -> bolha inteira dentro do círculo interno
+    let d = INNER_RADIUS + bubbleRadius * (1 - 2 * directedPct);
 
-    // Se a categoria tem pelo menos um projeto direcionado,
-    // forçar a bolha a invadir o círculo interno (hex #006CB7)
-    if (cat.directed > 0) {
-      const maxD = INNER_RADIUS + bubbleRadius - 150000;
-      d = Math.min(d, maxD);
-    }
+    // Garantir que a bolha caiba dentro do slide (não ultrapasse o outer radius)
+    d = Math.min(d, OUTER_RADIUS - bubbleRadius);
 
     return {
       x: Math.round(CENTER_X + d * Math.cos(angle)),
@@ -441,20 +439,24 @@ function resolveOverlaps(
       }
     }
 
-    // Enforce directed-constraint: bubbles with directed projects
-    // MUST invade the inner circle (hex #006CB7)
+    // Enforce directed-constraint: a distância do centro da bolha
+    // ao centro do radar deve ser proporcional ao % direcionado.
+    // Quanto maior o % direcionado, mais a bolha invade o círculo interno.
     for (let i = 0; i < result.length; i++) {
+      const directedPct = Math.min(1, Math.max(0, categories[i].directedPct));
       if (categories[i].directed > 0) {
         const r = result[i].diameter / 2;
-        const maxDist = INNER_RADIUS + r - 150000;
+        // Centro da bolha deve estar a INNER_RADIUS + r*(1 - 2*pct)
+        // Isso faz a proporção de invasão ser exatamente igual ao % direcionado
+        const targetDist = INNER_RADIUS + r * (1 - 2 * directedPct);
         const dx = result[i].x - CENTER_X;
         const dy = result[i].y - CENTER_Y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > maxDist) {
+        if (dist > targetDist + 100000) {
           const nx = dx / dist;
           const ny = dy / dist;
-          result[i].x = Math.round(CENTER_X + nx * maxDist);
-          result[i].y = Math.round(CENTER_Y + ny * maxDist);
+          result[i].x = Math.round(CENTER_X + nx * targetDist);
+          result[i].y = Math.round(CENTER_Y + ny * targetDist);
           moved = true;
         }
       }
