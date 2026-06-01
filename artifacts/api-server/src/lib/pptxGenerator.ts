@@ -244,7 +244,7 @@ function generateHighlightBox(
     `<a:ln w="38100"><a:solidFill><a:srgbClr val="060386"/></a:solidFill></a:ln>` +
     `</p:spPr>` +
     `<p:txBody>` +
-    `<a:bodyPr wrap="square" lIns="36000" rIns="36000" tIns="36000" bIns="36000" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
+    `<a:bodyPr wrap="square" lIns="91440" rIns="91440" tIns="0" bIns="0" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
     `<a:lstStyle/>` +
     catPara +
     projectParas +
@@ -258,6 +258,10 @@ function generateArrow(
   y1: number,
   x2: number,
   y2: number,
+  startShapeId?: number,
+  startCxnIdx?: number,
+  endShapeId?: number,
+  endCxnIdx?: number,
 ): string {
   const rx1 = Math.round(x1);
   const ry1 = Math.round(y1);
@@ -270,11 +274,18 @@ function generateArrow(
   const flipH = rx1 > rx2 ? ' flipH="1"' : "";
   const flipV = ry1 > ry2 ? ' flipV="1"' : "";
 
+  const stCxn = startShapeId !== undefined
+    ? `<a:stCxn id="${startShapeId}" idx="${startCxnIdx ?? 0}"/>`
+    : "";
+  const endCxn = endShapeId !== undefined
+    ? `<a:endCxn id="${endShapeId}" idx="${endCxnIdx ?? 0}"/>`
+    : "";
+
   return (
     `<p:cxnSp>` +
     `<p:nvCxnSpPr>` +
     `<p:cNvPr id="${id}" name="Arrow${id}"/>` +
-    `<p:cNvCxnSpPr/><p:nvPr/>` +
+    `<p:cNvCxnSpPr>${stCxn}${endCxn}</p:cNvCxnSpPr><p:nvPr/>` +
     `</p:nvCxnSpPr>` +
     `<p:spPr>` +
     `<a:xfrm${flipH}${flipV}><a:off x="${offX}" y="${offY}"/><a:ext cx="${extCX}" cy="${extCY}"/></a:xfrm>` +
@@ -337,9 +348,13 @@ interface ExclusionRect { x1: number; y1: number; x2: number; y2: number }
 
 // Fixed areas that bubbles must not overlap (title bar, legend block)
 const EXCLUSION_ZONES: ExclusionRect[] = [
-  { x1: 0,       y1: 0, x2: SLIDE_W,    y2: 860000  }, // title strip (top)
-  { x1: 8350000, y1: 0, x2: SLIDE_W,    y2: 1700000 }, // legend (top-right)
+  { x1: 0,       y1: 0,       x2: SLIDE_W, y2: 860000  }, // title strip (top)
+  { x1: 8350000, y1: 0,       x2: SLIDE_W, y2: 1700000 }, // legend (top-right)
+  { x1: 0,       y1: 5600000, x2: 3800000, y2: SLIDE_H }, // legend (bottom-left)
 ];
+
+// Zone where highlight boxes must not be placed (bottom-left legend)
+const HIGHLIGHT_LEGEND_ZONE: ExclusionRect = { x1: 0, y1: 5600000, x2: 3800000, y2: SLIDE_H };
 
 function pushBubbleFromRect(
   bx: number, by: number, r: number,
@@ -466,10 +481,16 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
     let newShapes = "";
     let idCounter = 300;
 
+    // Track the bubble shape ID for each category index (for arrow connections)
+    const bubbleIds: number[] = [];
+
     for (let i = 0; i < input.categories.length; i++) {
       const cat = input.categories[i];
       const pos = positions[i];
       const isSmall = pos.diameter < SMALL_BUBBLE_THRESHOLD;
+
+      const bubbleId = idCounter;
+      bubbleIds.push(bubbleId);
 
       newShapes += generateBubbleXml(
         idCounter++,
@@ -519,11 +540,24 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
           Math.min(SLIDE_W - BOX_W - MARGIN, rawBoxX),
         ));
         const rawBoxY = pos.y - Math.round(boxH / 2);
-        const boxY = Math.round(Math.max(
+        let boxY = Math.round(Math.max(
           MARGIN + 350000,
           Math.min(SLIDE_H - boxH - MARGIN, rawBoxY),
         ));
 
+        // Push box up if it would overlap the bottom-left legend zone
+        if (
+          boxX < HIGHLIGHT_LEGEND_ZONE.x2 &&
+          boxX + BOX_W > HIGHLIGHT_LEGEND_ZONE.x1 &&
+          boxY + boxH > HIGHLIGHT_LEGEND_ZONE.y1
+        ) {
+          boxY = Math.max(
+            MARGIN + 350000,
+            HIGHLIGHT_LEGEND_ZONE.y1 - boxH - MARGIN,
+          );
+        }
+
+        const highlightBoxId = idCounter;
         newShapes += generateHighlightBox(
           idCounter++,
           boxX,
@@ -532,6 +566,12 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
           cat.displayName,
           projects,
         );
+
+        const bubbleId = bubbleIds[catIdx];
+        // Connection point indices for ellipse/roundRect: 0=top,1=right,2=bottom,3=left
+        // Arrow goes from bubble edge → highlight box edge
+        const bubbleCxnIdx = onLeft ? 3 : 1;   // bubble left or right
+        const boxCxnIdx = onLeft ? 1 : 3;       // box right or left
 
         const arrowStartX = onLeft ? pos.x - bubbleR : pos.x + bubbleR;
         const arrowStartY = pos.y;
@@ -544,6 +584,10 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
           arrowStartY,
           arrowEndX,
           arrowEndY,
+          bubbleId,
+          bubbleCxnIdx,
+          highlightBoxId,
+          boxCxnIdx,
         );
       }
     }
