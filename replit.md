@@ -41,5 +41,5 @@ Aplicativo web que converte planilhas Excel de projetos em apresentações Power
 
 - O template PPTX está em `attached_assets/` — caminho hardcoded no pptxGenerator.ts
 - No bundle esbuild, `__dirname` = `dist/` (3 níveis acima de `workspace/`)
-- Etapas direcionadas: Concluído, Solução Experimentada, Finalizado
+- Etapas direcionadas: Concluído, Solução Experimentada
 - Etapas excluídas: Cancelado, Identificado

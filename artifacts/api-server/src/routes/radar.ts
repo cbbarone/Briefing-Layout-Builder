@@ -24,7 +24,12 @@ function normalizeStr(s: string): string {
 }
 
 function normCategory(s: string): string {
-  return String(s).replace(/_/g, " ").trim();
+  return String(s)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/_/g, " ")
+    .trim();
 }
 
 router.post(
