@@ -323,10 +323,6 @@ function calculatePositions(categories: CategoryData[]): BubblePos[] {
   return categories.map((cat, i) => {
     const angle = (2 * Math.PI * i) / n - Math.PI / 2 + Math.PI / 8;
     const directedPct = Math.min(1, Math.max(0, cat.directedPct));
-    const d =
-      INNER_RADIUS +
-      (OUTER_RADIUS - INNER_RADIUS) * (1 - directedPct) +
-      300000;
 
     let diameter: number;
     if (maxCount === minCount) {
@@ -334,6 +330,21 @@ function calculatePositions(categories: CategoryData[]): BubblePos[] {
     } else {
       const ratio = (cat.total - minCount) / (maxCount - minCount);
       diameter = MIN_BUBBLE_DIAM + ratio * (MAX_BUBBLE_DIAM - MIN_BUBBLE_DIAM);
+    }
+
+    const bubbleRadius = diameter / 2;
+
+    // Posição baseada no % direcionado
+    let d =
+      INNER_RADIUS +
+      (OUTER_RADIUS - INNER_RADIUS) * (1 - directedPct) +
+      300000;
+
+    // Se a categoria tem pelo menos um projeto direcionado,
+    // forçar a bolha a invadir o círculo interno (hex #006CB7)
+    if (cat.directed > 0) {
+      const maxD = INNER_RADIUS + bubbleRadius - 150000;
+      d = Math.min(d, maxD);
     }
 
     return {
@@ -375,7 +386,10 @@ function pushBubbleFromRect(
   return { dx: (dx / dist) * push, dy: (dy / dist) * push };
 }
 
-function resolveOverlaps(positions: BubblePos[]): BubblePos[] {
+function resolveOverlaps(
+  positions: BubblePos[],
+  categories: CategoryData[],
+): BubblePos[] {
   const result = positions.map((p) => ({ ...p }));
   const MARGIN = 200000;
 
@@ -427,6 +441,25 @@ function resolveOverlaps(positions: BubblePos[]): BubblePos[] {
       }
     }
 
+    // Enforce directed-constraint: bubbles with directed projects
+    // MUST invade the inner circle (hex #006CB7)
+    for (let i = 0; i < result.length; i++) {
+      if (categories[i].directed > 0) {
+        const r = result[i].diameter / 2;
+        const maxDist = INNER_RADIUS + r - 150000;
+        const dx = result[i].x - CENTER_X;
+        const dy = result[i].y - CENTER_Y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > maxDist) {
+          const nx = dx / dist;
+          const ny = dy / dist;
+          result[i].x = Math.round(CENTER_X + nx * maxDist);
+          result[i].y = Math.round(CENTER_Y + ny * maxDist);
+          moved = true;
+        }
+      }
+    }
+
     if (!moved) break;
   }
   return result;
@@ -436,7 +469,7 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
   const templateBuffer = await fs.readFile(TEMPLATE_PATH);
   const zip = await (JSZip as any).loadAsync(templateBuffer);
 
-  const positions = resolveOverlaps(calculatePositions(input.categories));
+  const positions = resolveOverlaps(calculatePositions(input.categories), input.categories);
 
   const highlightsByCatIdx = new Map<number, string[]>();
   for (const h of input.highlights) {
