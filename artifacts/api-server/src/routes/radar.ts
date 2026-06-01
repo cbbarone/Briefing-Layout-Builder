@@ -51,9 +51,9 @@ router.post(
         const row = rows[i];
         for (let j = 0; j < row.length; j++) {
           const h = normalizeStr(String(row[j] || ""));
-          if (h === "categoria") colMap.categoria = j;
-          if (h === "titulo") colMap.titulo = j;
-          if (h === "etapa") colMap.etapa = j;
+          if (h === "categorias" || h === "categoria") colMap.categoria = j;
+          if (h === "resumo" || h === "titulo") colMap.titulo = j;
+          if (h === "status" || h === "etapa") colMap.etapa = j;
         }
         if (
           colMap.categoria >= 0 &&
@@ -68,7 +68,7 @@ router.post(
       if (headerRow < 0) {
         return res.status(400).json({
           error:
-            "Colunas obrigatórias não encontradas. A planilha deve ter as colunas: CATEGORIA, TÍTULO, ETAPA.",
+            "Colunas obrigatórias não encontradas. A planilha deve ter as colunas: CATEGORIAS, RESUMO, STATUS.",
         });
       }
 

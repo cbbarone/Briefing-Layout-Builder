@@ -148,7 +148,7 @@ export default function UploadPage({ onParsed }: Props) {
                     : "Arraste sua planilha ou clique para selecionar"}
                 </p>
                 <p className="drop-text-sub">
-                  Arquivos Excel (.xlsx, .xls) — colunas: CATEGORIA, TÍTULO, ETAPA
+                  Arquivos Excel (.xlsx, .xls) — colunas: CATEGORIAS, RESUMO, STATUS
                 </p>
                 <button
                   type="button"
