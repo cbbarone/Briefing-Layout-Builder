@@ -21,7 +21,7 @@ Aplicativo web que converte planilhas Excel de projetos em apresentações Power
 - `artifacts/api-server/src/lib/pptxGenerator.ts` — lógica de geração PPTX com jszip
 - `artifacts/radar-app/src/pages/Upload.tsx` — tela de upload
 - `artifacts/radar-app/src/pages/Preview.tsx` — seleção de destaques + download
-- `attached_assets/*.pptx` — template base do PowerPoint
+- `attached_assets/Radar_Inovacao_(3)_1780409449539.pptx` — template base do PowerPoint (vazio, sem bolhas)
 
 ## Architecture decisions
 

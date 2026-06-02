@@ -11,7 +11,7 @@ const TEMPLATE_PATH = path.join(
   "..",
   "..",
   "attached_assets",
-  "02_-_Comite_Inovação_e_Novos_Negocios_17_04_2026_1_1779743624123.pptx",
+  "Radar_Inovacao_(3)_1780409449539.pptx",
 );
 
 const SLIDE_W = 12192000;
@@ -26,7 +26,7 @@ const SMALL_BUBBLE_THRESHOLD = 900000;
 const HIGHLIGHT_BOX_WIDTH = 2300000;
 const HIGHLIGHT_GAP = 220000;
 
-const DYNAMIC_SHAPE_IDS = [15, 17, 20, 21, 22, 32, 47, 48, 8, 10];
+const DYNAMIC_SHAPE_IDS: number[] = [];
 
 export interface CategoryData {
   name: string;
