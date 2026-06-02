@@ -130,7 +130,7 @@ function generateBubbleXml(
     diameter > 2200000 ? 4800 :
     diameter > 1600000 ? 3600 :
     diameter > 1100000 ? 2800 :
-    diameter > 750000  ? 2000 : 1600;
+    diameter > 750000  ? 2000 : 3200;
 
   const nameFontSize =
     diameter > 2200000 ? 1300 :
@@ -147,7 +147,7 @@ function generateBubbleXml(
     ? splitIntoLines(categoryName, maxCharsPerLine)
         .map(
           (line) =>
-            `<a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="pt-BR" sz="${nameFontSize}" b="1" dirty="0">` +
+            `<a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="pt-BR" sz="${nameFontSize}" b="0" dirty="0">` +
             `<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>` +
             `<a:latin typeface="Montserrat" pitchFamily="2" charset="77"/></a:rPr>` +
             `<a:t>${escapeXml(line)}</a:t></a:r></a:p>`,
@@ -201,7 +201,7 @@ function generateCategoryLabel(
     `<a:bodyPr wrap="square" lIns="91440" rIns="91440" tIns="45720" bIns="45720" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
     `<a:lstStyle/>` +
     `<a:p><a:pPr algn="ctr"><a:buNone/></a:pPr><a:r>` +
-    `<a:rPr lang="pt-BR" sz="700" b="0" dirty="0">` +
+    `<a:rPr lang="pt-BR" sz="1000" b="0" dirty="0">` +
     `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
     `<a:latin typeface="Montserrat" pitchFamily="2" charset="77"/>` +
     `</a:rPr><a:t>${escapeXml(categoryName)}</a:t></a:r></a:p>` +

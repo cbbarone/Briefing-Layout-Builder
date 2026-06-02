@@ -87,7 +87,7 @@ router.post(
 
       const categoryMap = new Map<
         string,
-        { total: number; directed: number; displayName: string }
+        { total: number; directed: number; displayName: string; originalName: string }
       >();
 
       for (let i = headerRow + 1; i < rows.length; i++) {
@@ -113,7 +113,8 @@ router.post(
           categoryMap.set(categoria, {
             total: 0,
             directed: 0,
-            displayName: categoria.toUpperCase(),
+            displayName: categoriaRaw.toUpperCase(),
+            originalName: categoriaRaw,
           });
         }
         const catData = categoryMap.get(categoria)!;
@@ -125,7 +126,7 @@ router.post(
         categoryMap.entries(),
       ).map(([name, data]) => ({
         name,
-        displayName: data.displayName,
+        displayName: data.originalName.toUpperCase(),
         total: data.total,
         directed: data.directed,
         directedPct: data.total > 0 ? data.directed / data.total : 0,
