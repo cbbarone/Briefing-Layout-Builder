@@ -128,9 +128,7 @@ function generateBubbleXml(
 
   const countFontSize =
     diameter > 2200000 ? 4800 :
-    diameter > 1600000 ? 3600 :
-    diameter > 1100000 ? 2800 :
-    diameter > 750000  ? 2000 : 3200;
+    diameter > 1600000 ? 3600 : 3200;
 
   const nameFontSize =
     diameter > 2200000 ? 1300 :
