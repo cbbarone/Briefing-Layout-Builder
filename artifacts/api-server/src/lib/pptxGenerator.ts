@@ -186,23 +186,22 @@ function generateCategoryLabel(
   y: number,
   categoryName: string,
 ): string {
-  const W = 1600000;
+  const W = 2000000;
   return (
     `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="CatLabel${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>` +
     `<p:spPr>` +
-    `<a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${W}" cy="200000"/></a:xfrm>` +
+    `<a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${W}" cy="250000"/></a:xfrm>` +
     `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>` +
     `<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>` +
     `<a:ln><a:noFill/></a:ln>` +
     `</p:spPr>` +
     `<p:txBody>` +
-    `<a:bodyPr wrap="square" lIns="91440" rIns="91440" tIns="45720" bIns="45720" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
+    `<a:bodyPr lIns="0" tIns="0" rIns="0" bIns="0" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
     `<a:lstStyle/>` +
-    `<a:p><a:pPr algn="ctr"><a:buNone/></a:pPr><a:r>` +
-    `<a:rPr lang="pt-BR" sz="1000" b="0" dirty="0">` +
-    `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
-    `<a:latin typeface="Montserrat" pitchFamily="2" charset="77"/>` +
-    `</a:rPr><a:t>${escapeXml(categoryName)}</a:t></a:r></a:p>` +
+    `<a:p><a:pPr marL="0" marR="0" lvl="0" indent="0" algn="ctr" defTabSz="914400" rtl="0" eaLnBrk="1" fontAlgn="auto" latinLnBrk="0" hangingPunct="1">` +
+    `<a:lnSpc><a:spcPct val="100000"/></a:lnSpc><a:spcBef><a:spcPts val="0"/></a:spcBef><a:spcAft><a:spcPts val="0"/></a:spcAft>` +
+    `<a:buClrTx/><a:buSzTx/><a:buFontTx/><a:buNone/><a:tabLst/><a:defRPr/>` +
+    `</a:pPr><a:r><a:rPr kumimoji="0" lang="pt-BR" sz="1000" b="0" i="0" u="none" strike="noStrike" kern="1200" cap="none" spc="0" normalizeH="0" baseline="0" noProof="0"><a:ln><a:noFill/></a:ln><a:solidFill><a:srgbClr val="060386"/></a:solidFill><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface="Montserrat" pitchFamily="2" charset="77"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:rPr><a:t>${escapeXml(categoryName)}</a:t></a:r></a:p>` +
     `</p:txBody></p:sp>`
   );
 }
@@ -316,7 +315,10 @@ function calculatePositions(categories: CategoryData[]): BubblePos[] {
 
     let diameter: number;
     if (maxCount === minCount) {
-      diameter = (MIN_BUBBLE_DIAM + MAX_BUBBLE_DIAM) / 2;
+      // Quando só há uma categoria ou todas têm o mesmo total,
+      // use uma escala absoluta baseada em 10 como o máximo de referência
+      const absRatio = Math.min(1, cat.total / 10);
+      diameter = MIN_BUBBLE_DIAM + absRatio * (MAX_BUBBLE_DIAM - MIN_BUBBLE_DIAM);
     } else {
       const ratio = (cat.total - minCount) / (maxCount - minCount);
       diameter = MIN_BUBBLE_DIAM + ratio * (MAX_BUBBLE_DIAM - MIN_BUBBLE_DIAM);
@@ -514,8 +516,25 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
       const pos = positions[i];
       const isSmall = pos.diameter < SMALL_BUBBLE_THRESHOLD;
 
-      const bubbleId = idCounter;
+      const bubbleId = isSmall ? idCounter + 1 : idCounter;
       bubbleIds.push(bubbleId);
+
+      if (isSmall) {
+        const onLeft = pos.x < CENTER_X;
+        const LW = 2000000;
+        const halfD = Math.round(pos.diameter / 2);
+        const OVERLAP = 40000;
+        const labelX = onLeft
+          ? Math.round(Math.max(50000, pos.x - halfD - LW + OVERLAP))
+          : Math.round(Math.min(SLIDE_W - LW - 50000, pos.x + halfD - OVERLAP));
+        const labelY = Math.round(pos.y - 125000);
+        newShapes += generateCategoryLabel(
+          idCounter++,
+          labelX,
+          labelY,
+          cat.displayName,
+        );
+      }
 
       newShapes += generateBubbleXml(
         idCounter++,
@@ -526,22 +545,6 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
         cat.displayName,
         !isSmall,
       );
-
-      if (isSmall) {
-        const onLeft = pos.x < CENTER_X;
-        const LW = 1600000;
-        const halfD = Math.round(pos.diameter / 2);
-        const labelX = onLeft
-          ? Math.round(Math.max(50000, pos.x - halfD - LW - 150000))
-          : Math.round(Math.min(SLIDE_W - LW - 50000, pos.x + halfD + 150000));
-        const labelY = Math.round(pos.y - 160000);
-        newShapes += generateCategoryLabel(
-          idCounter++,
-          labelX,
-          labelY,
-          cat.displayName,
-        );
-      }
     }
 
     if (isSlide2 && highlightsByCatIdx.size > 0) {
