@@ -217,19 +217,12 @@ function generateHighlightBox(
   categoryName: string,
   projects: string[],
 ): string {
-  const catPara =
-    `<a:p><a:pPr><a:buNone/></a:pPr><a:r>` +
-    `<a:rPr lang="pt-BR" sz="900" b="1" dirty="0">` +
-    `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
-    `<a:latin typeface="Montserrat" pitchFamily="2" charset="77"/>` +
-    `</a:rPr><a:t>${escapeXml(categoryName)}</a:t></a:r></a:p>`;
-
   const projectParas = projects
     .map(
       (p) =>
         `<a:p><a:pPr><a:buNone/></a:pPr><a:r>` +
         `<a:rPr lang="pt-BR" sz="800" dirty="0">` +
-        `<a:solidFill><a:srgbClr val="1A1A1A"/></a:solidFill>` +
+        `<a:solidFill><a:srgbClr val="060386"/></a:solidFill>` +
         `<a:latin typeface="Montserrat" pitchFamily="2" charset="77"/>` +
         `</a:rPr><a:t>\u2022 ${escapeXml(p)}</a:t></a:r></a:p>`,
     )
@@ -246,7 +239,6 @@ function generateHighlightBox(
     `<p:txBody>` +
     `<a:bodyPr wrap="square" lIns="91440" rIns="91440" tIns="0" bIns="0" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
     `<a:lstStyle/>` +
-    catPara +
     projectParas +
     `</p:txBody></p:sp>`
   );
