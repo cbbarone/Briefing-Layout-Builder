@@ -113,7 +113,7 @@ router.post(
           categoryMap.set(categoria, {
             total: 0,
             directed: 0,
-            displayName: categoriaRaw.toUpperCase(),
+            displayName: categoriaRaw.toUpperCase().replace(/_/g, " "),
             originalName: categoriaRaw,
           });
         }
@@ -126,7 +126,7 @@ router.post(
         categoryMap.entries(),
       ).map(([name, data]) => ({
         name,
-        displayName: data.originalName.toUpperCase(),
+        displayName: data.originalName.toUpperCase().replace(/_/g, " "),
         total: data.total,
         directed: data.directed,
         directedPct: data.total > 0 ? data.directed / data.total : 0,
