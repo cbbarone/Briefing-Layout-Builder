@@ -190,13 +190,13 @@ function generateCategoryLabel(
   return (
     `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="CatLabel${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>` +
     `<p:spPr>` +
-    `<a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${W}" cy="250000"/></a:xfrm>` +
+    `<a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${W}" cy="200000"/></a:xfrm>` +
     `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>` +
     `<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>` +
     `<a:ln><a:noFill/></a:ln>` +
     `</p:spPr>` +
     `<p:txBody>` +
-    `<a:bodyPr lIns="0" tIns="0" rIns="0" bIns="0" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
+    `<a:bodyPr anchor="ctr" lIns="0" tIns="36000" rIns="0" bIns="36000" rtlCol="0"><a:spAutoFit/></a:bodyPr>` +
     `<a:lstStyle/>` +
     `<a:p><a:pPr marL="0" marR="0" lvl="0" indent="0" algn="ctr" defTabSz="914400" rtl="0" eaLnBrk="1" fontAlgn="auto" latinLnBrk="0" hangingPunct="1">` +
     `<a:lnSpc><a:spcPct val="100000"/></a:lnSpc><a:spcBef><a:spcPts val="0"/></a:spcBef><a:spcAft><a:spcPts val="0"/></a:spcAft>` +
@@ -520,14 +520,14 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
       bubbleIds.push(bubbleId);
 
       if (isSmall) {
-        const onLeft = pos.x < CENTER_X;
-        const LW = 2000000;
         const halfD = Math.round(pos.diameter / 2);
-        const OVERLAP = 40000;
+        const onLeft = pos.x - halfD < CENTER_X;
+        const LW = 2000000;
+        const LH = 200000;
         const labelX = onLeft
-          ? Math.round(Math.max(50000, pos.x - halfD - LW + OVERLAP))
-          : Math.round(Math.min(SLIDE_W - LW - 50000, pos.x + halfD - OVERLAP));
-        const labelY = Math.round(pos.y - 125000);
+          ? Math.round(Math.max(50000, pos.x - halfD - LW))
+          : Math.round(Math.min(SLIDE_W - LW - 50000, pos.x + halfD));
+        const labelY = Math.round(pos.y - LH / 2);
         newShapes += generateCategoryLabel(
           idCounter++,
           labelX,
@@ -605,6 +605,10 @@ export async function generatePptx(input: GenerateInput): Promise<Buffer> {
         const arrowStartY = pos.y;
         const arrowEndX = onLeft ? boxX + BOX_W : boxX;
         const arrowEndY = Math.round(boxY + boxH / 2);
+
+        // Ensure arrow connects to the nearest edges between bubble and highlight box
+        const nearestBubbleX = onLeft ? pos.x - bubbleR : pos.x + bubbleR;
+        const nearestBoxX = onLeft ? boxX + BOX_W : boxX;
 
         newShapes += generateArrow(
           idCounter++,
